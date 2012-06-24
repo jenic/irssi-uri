@@ -45,6 +45,12 @@ $VERSION = '0.5';
     url         => 'http://sniker.codebase.nu/',
 );
 
+## URL Blacklist
+#  Evaluated as regular expressions
+my @blacklist = ( 'blinkenshell\.org'
+								, 'xmonad\.org'
+								);
+
 sub uri_public {
     my ($server, $data, $nick, $mask, $target) = @_;
 		my @url = uri_parse($data);
@@ -98,13 +104,24 @@ sub uri_private {
     }
 }
 
-				
+sub chklist {
+	my $link = shift;
+	my $r = 1;
+	for my $exp (@blacklist) {
+		if ($link =~ /$exp/) {
+			$r = 0;
+			last;
+		}
+	}
+	return $r;
+}
+
 sub uri_parse {
 	my ($url) = @_;
 	#Irssi::print("[Debug] uri_parse: $url");
 	my @urljar = ($url =~ /(https?:\/\/(?:[^ ]+))/g);
-	# Filter out blinkenshell links cuz its annoying
-	@urljar = grep (!/blinkenshell\.org/, @urljar);
+	# Filter out blacklisted links
+	@urljar = grep { &chklist($_) } @urljar;
 	return (@urljar > 0) ? @urljar : ();
 }
 
