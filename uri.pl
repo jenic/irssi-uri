@@ -21,7 +21,7 @@
 # 1MB max download size before giving up
 # Stop downloading chunks after <title> tags detected
 # detect <title> is now case insensitive (for older <TITLE> tags)
-# ignores blinkenshell links
+# ignores blacklisted links
 #
 #####################################################################
 
