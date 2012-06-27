@@ -21,7 +21,7 @@
 # 1MB max download size before giving up
 # Stop downloading chunks after <title> tags detected
 # detect <title> is now case insensitive (for older <TITLE> tags)
-# ignores blinkenshell links
+# ignores blacklisted links
 #
 #####################################################################
 
@@ -67,6 +67,9 @@ sub uri_public {
 				next;
 			}
 			$retval =~ s/\n//g;
+			#multiple small calls to engine more efficient than expressed in regex
+			$retval =~ s/^\s+//;
+			$retval =~ s/\s+$//;
 			$retval = decode_entities($retval);
 			
 			if ($retval) {
