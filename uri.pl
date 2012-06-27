@@ -67,6 +67,9 @@ sub uri_public {
 				next;
 			}
 			$retval =~ s/\n//g;
+			#multiple small calls to engine more efficient than expressed in regex
+			$retval =~ s/^\s+//;
+			$retval =~ s/\s+$//;
 			$retval = decode_entities($retval);
 			
 			if ($retval) {
