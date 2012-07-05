@@ -122,7 +122,7 @@ sub chklist {
 sub uri_parse {
 	my ($url) = @_;
 	#Irssi::print("[Debug] uri_parse: $url");
-	my @urljar = ($url =~ /(https?:\/\/(?:[^ ]+))/g);
+	my @urljar = ($url =~ /(https?:\/\/(?:[^\s"';]+))/g);
 	# Filter out blacklisted links
 	@urljar = grep { &chklist($_) } @urljar;
 	return (@urljar > 0) ? @urljar : ();
