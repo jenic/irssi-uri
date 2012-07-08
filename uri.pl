@@ -22,10 +22,10 @@
 # Stop downloading chunks after <title> tags detected
 # detect <title> is now case insensitive (for older <TITLE> tags)
 # ignores blacklisted links
+# Strips extraneous whitespace from titles before printing to irssi
+# Smarter url detection
 #
 #####################################################################
-
-
 
 use strict;
 use Irssi;
