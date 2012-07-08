@@ -49,6 +49,7 @@ $VERSION = '0.5';
 #  Evaluated as regular expressions
 my @blacklist = ( 'blinkenshell\.org'
 								, 'xmonad\.org'
+								, 'utw\.me'
 								);
 
 sub uri_public {
