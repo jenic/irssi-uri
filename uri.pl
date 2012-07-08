@@ -22,10 +22,10 @@
 # Stop downloading chunks after <title> tags detected
 # detect <title> is now case insensitive (for older <TITLE> tags)
 # ignores blacklisted links
+# Strips extraneous whitespace from titles before printing to irssi
+# Smarter url detection
 #
 #####################################################################
-
-
 
 use strict;
 use Irssi;
@@ -49,6 +49,7 @@ $VERSION = '0.5';
 #  Evaluated as regular expressions
 my @blacklist = ( 'blinkenshell\.org'
 								, 'xmonad\.org'
+								, 'utw\.me'
 								);
 
 sub uri_public {
@@ -96,6 +97,8 @@ sub uri_private {
 				next;
 			}
 			$retval =~ s/\n//g;
+			$retval =~ s/^\s+//;
+			$retval =~ s/\s+$//;
 			$retval = decode_entities($retval);
 			
 			if ($retval) {
@@ -122,7 +125,7 @@ sub chklist {
 sub uri_parse {
 	my ($url) = @_;
 	#Irssi::print("[Debug] uri_parse: $url");
-	my @urljar = ($url =~ /(https?:\/\/(?:[^ ]+))/g);
+	my @urljar = ($url =~ /(https?:\/\/(?:[^\s"';]+))/g);
 	# Filter out blacklisted links
 	@urljar = grep { &chklist($_) } @urljar;
 	return (@urljar > 0) ? @urljar : ();
