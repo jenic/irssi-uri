@@ -97,6 +97,8 @@ sub uri_private {
 				next;
 			}
 			$retval =~ s/\n//g;
+			$retval =~ s/^\s+//;
+			$retval =~ s/\s+$//;
 			$retval = decode_entities($retval);
 			
 			if ($retval) {
