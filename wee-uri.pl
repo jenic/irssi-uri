@@ -24,6 +24,7 @@
 # Strips extraneous whitespace from titles before printing 
 # Smarter url detection
 # Port from irssi to WeeChat
+# Code rewrite sufficiently changes this script, relicensed as GPL3
 #
 #####################################################################
 
@@ -43,7 +44,7 @@ my %opt = ( 'debug'				=>	0
 weechat::register	( $self
 									, 'Jenic Rycr <jenic\@wubwub.me>'
 									, '0.5'
-									, 'BSD'
+									, 'GPL3'
 									, 'URI Title Fetching'
 									, ''
 									, ''
