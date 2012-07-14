@@ -51,7 +51,16 @@ my @blacklist = ( 'blinkenshell\.org'
 								, 'xmonad\.org'
 								, 'utw\.me'
 								);
+=item maybe_later
 
+sub setc () {
+	$IRSSI{'name'}
+}
+sub set ($) {
+	setc . '_' . shift
+}
+
+=cut
 sub uri_public {
     my ($server, $data, $nick, $mask, $target) = @_;
 		my @url = uri_parse($data);
@@ -73,13 +82,12 @@ sub uri_public {
 			$retval =~ s/\s+$//;
 			$retval = decode_entities($retval);
 			
-			if ($retval) {
-				( ($win) ?
-					$win->print($retval, MSGLEVEL_CRAP) :
-					Irssi::print($retval)
-				);
-			}
-    }
+			next unless ($retval);
+			( ($win) ?
+				$win->print($retval, MSGLEVEL_CRAP) :
+				Irssi::print($retval)
+			);
+		}
 }
 sub uri_private {
     my ($server, $data, $nick, $mask) = @_;
@@ -101,13 +109,12 @@ sub uri_private {
 			$retval =~ s/\s+$//;
 			$retval = decode_entities($retval);
 			
-			if ($retval) {
-				( ($win) ?
-					$win->print($retval, MSGLEVEL_CRAP) :
-					Irssi::print($retval)
-				);
-			}
-    }
+			next unless ($retval);
+			( ($win) ?
+				$win->print($retval, MSGLEVEL_CRAP) :
+				Irssi::print($retval)
+			);
+		}
 }
 
 sub chklist {
@@ -159,3 +166,5 @@ sub uri_get {
 
 Irssi::signal_add_last('message public', 'uri_public');
 Irssi::signal_add_last('message private', 'uri_private');
+
+#Irssi::settings_add_int(setc, set 'maxdl', 1024);
