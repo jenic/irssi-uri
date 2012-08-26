@@ -36,26 +36,26 @@ use constant _VERSION => sprintf("%s", weechat::info_get('version',''));
 
 my $self = 'uri';
 # Default Options
-my %opt = ( 'debug'				=>	0
-					, 'xown'				=>	0
-					, 'single_nick'	=>	0
-					);
+my %opt =	( 'debug'		=>	0
+			, 'xown'		=>	0
+			, 'single_nick'	=>	0
+			);
 
 weechat::register	( $self
-									, 'Jenic Rycr <jenic\@wubwub.me>'
-									, '0.5'
-									, 'GPL3'
-									, 'URI Title Fetching'
-									, ''
-									, ''
-									);
+					, 'Jenic Rycr <jenic\@wubwub.me>'
+					, '0.5'
+					, 'GPL3'
+					, 'URI Title Fetching'
+					, ''
+					, ''
+					);
 
 ## URL Blacklist
 #  Evaluated as regular expressions
 my @blacklist = ( 'blinkenshell\.org'
-								, 'xmonad\.org'
-								, 'utw\.me'
-								);
+				, 'xmonad\.org'
+				, 'utw\.me'
+				);
 
 # Helper Subroutines
 sub debug {
@@ -151,7 +151,6 @@ sub uri_cb {
 		$retval =~ s/\s+$//;
 		$retval = decode_entities($retval);
 
-		next unless ($retval);
 		weechat::print($buffer, "[uri]\t$retval");
 	}
 	return weechat::WEECHAT_RC_OK;
