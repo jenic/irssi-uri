@@ -32,7 +32,7 @@ use strict;
 use LWP::UserAgent;
 use Carp qw(croak);
 use HTML::Entities;
-use constant _VERSION => sprintf("%s", weechat::info_get('version',''));
+use constant _VERSION => sprintf("%s", weechat::info_get('version_number',''));
 
 my $self = 'uri';
 my (%cache, %cacheT);
@@ -145,6 +145,7 @@ sub uri_cb {
 		if(exists $cache{$uri} && $cacheT{$uri} < (time - $opt{cachet})) {
 			weechat::print($buffer, "[uri]\t".$cache{$uri});
 			$cacheT{$uri} = time;
+			&debug("Used Cache from " . $cacheT{$uri});
 			next;
 		}
 		# No cache entry, get the uri
