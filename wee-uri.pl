@@ -32,7 +32,6 @@ use strict;
 use LWP::UserAgent;
 use Carp qw(croak);
 use HTML::Entities;
-use constant _VERSION => sprintf("%s", weechat::info_get('version_number',''));
 
 my $self = 'uri';
 my (%cache, %cacheT);
@@ -52,6 +51,7 @@ weechat::register	( $self
 					, ''
 					, ''
 					);
+my $version = sprintf("%s", weechat::info_get('version',''));
 
 ## URL Blacklist
 #  Evaluated as regular expressions
@@ -117,7 +117,7 @@ sub titlecheck {
 sub uri_get {
     my ($data) = @_;
     my $ua = LWP::UserAgent->new(env_proxy=>1, keep_alive=>1, timeout=>5);
-    $ua->agent("WeeChat/" . _VERSION . ' ' . $ua->agent());
+    $ua->agent("WeeChat/$version " . $ua->agent());
 		$ua->max_size(1024); # max 1MB download
 		# add header handler to stop if not html
 		$ua->add_handler(response_header => \&headcheck);
