@@ -35,10 +35,13 @@ use HTML::Entities;
 use constant _VERSION => sprintf("%s", weechat::info_get('version',''));
 
 my $self = 'uri';
+my (%cache, %cacheT);
 # Default Options
 my %opt =	( 'debug'		=>	0
 			, 'xown'		=>	0
 			, 'single_nick'	=>	0
+			, 'cache'		=>	5
+			, 'cachet'		=> 3600
 			);
 
 weechat::register	( $self
@@ -115,10 +118,10 @@ sub uri_get {
     my ($data) = @_;
     my $ua = LWP::UserAgent->new(env_proxy=>1, keep_alive=>1, timeout=>5);
     $ua->agent("WeeChat/" . _VERSION . ' ' . $ua->agent());
-		$ua->max_size(1024); # max 1MB download, //jenic
-		# add header handler to stop if not html, //jenic
+		$ua->max_size(1024); # max 1MB download
+		# add header handler to stop if not html
 		$ua->add_handler(response_header => \&headcheck);
-		# add data handler to stop after we dl <title>, //jenic
+		# add data handler to stop after we dl <title>
 		$ua->add_handler(response_data => \&titlecheck);
     my $res = $ua->get($data);
 		return ($res->is_success) ? $res->content : 0;
@@ -129,7 +132,7 @@ sub uri_cb {
 	my ($data, $buffer, $date, $tags, $displayed, $highlight, $prefix, $message) = @_;
 	&debug(join('::', @_), $buffer);
 	my @url = &uri_parse($message);
-	# there is no need to go beyond this point otherwise, //jenic
+	# there is no need to go beyond this point otherwise
 	return weechat::WEECHAT_RC_OK unless (@url > 0);
 	unless($opt{xown}) {
 		my $nick = &getNick($buffer);
@@ -138,6 +141,13 @@ sub uri_cb {
 	}
 	
 	for my $uri (@url) {
+		# Check our cache for a recent entry
+		if(exists $cache{$uri} && $cacheT{$uri} < (time - $opt{cachet})) {
+			weechat::print($buffer, "[uri]\t".$cache{$uri});
+			$cacheT{$uri} = time;
+			next;
+		}
+		# No cache entry, get the uri
 		my $retval = uri_get($uri);
 		if($retval =~ /<title>(.*?)<\/title>/is) {
 			$retval = $1;
@@ -152,19 +162,31 @@ sub uri_cb {
 		$retval = decode_entities($retval);
 
 		weechat::print($buffer, "[uri]\t$retval");
+		# Add this to cache and do some cache pruning
+		&debug("Cache Prune: " . pop sort keys %cacheT)
+			if (scalar keys %cache > $opt{cache});
+		$cache{$uri} = $retval;
+		$cacheT{$uri} = time;
 	}
 	return weechat::WEECHAT_RC_OK;
 }
 sub toggle_opt {
 	my ($pointer, $option, $value) = @_;
-	$opt{(split /\./, $option)[-1]} = $value;
+	my $o = (split /\./, $option)[-1];
+	if(exists $opt{$o}) {
+		$opt{$o} = $value;
+	} else {
+		weechat::print(weechat::current_buffer(), "$option doesn't exist!");
+	}
 	return weechat::WEECHAT_RC_OK;
 }
+=item test
 sub test {
 	my ($data, $buffer, $date, $tags, $displayed, $highlight, $prefix, $message) = @_;
 	&debug( join('::', @_), $buffer);
 	return weechat::WEECHAT_RC_OK;
 }
+=cut
 
 # Settings
 for (keys %opt) {

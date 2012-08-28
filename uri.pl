@@ -48,9 +48,9 @@ $VERSION = '0.5';
 ## URL Blacklist
 #  Evaluated as regular expressions
 my @blacklist = ( 'blinkenshell\.org'
-								, 'xmonad\.org'
-								, 'utw\.me'
-								);
+				, 'xmonad\.org'
+				, 'utw\.me'
+				);
 =item maybe_later
 
 sub setc () {
