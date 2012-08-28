@@ -63,10 +63,10 @@ my @blacklist = ( 'blinkenshell\.org'
 # Helper Subroutines
 sub debug {
 	return unless $opt{debug};
-	my ($msg, $buffer) = @_;
+	my $msg = shift;
 	my ($s, $m, $h) = (localtime(time) )[0,1,2,3,6];
 	my $date = sprintf "%02d:%02d:%02d", $h, $m, $s;
-	weechat::print($buffer, "[uri::debug]\t$msg");
+	weechat::print(weechat::current_buffer(), "[uri::debug]\t$msg");
 	return 1;
 }
 sub chklist {
@@ -94,10 +94,15 @@ sub getNick {
 	my $buffer = shift;
 	my $infolist = weechat::infolist_get('buffer', $buffer, '');
 	weechat::infolist_next($infolist);
-	&debug(weechat::infolist_string($infolist, 'name'), $buffer);
-	my $server = substr( (split /#/, weechat::infolist_string($infolist, 'name'))[0], 0, -1 );
+	&debug(weechat::infolist_string($infolist, 'name'));
+	my $server = substr	( (	split /#/
+												, weechat::infolist_string($infolist, 'name')
+												)[0]
+											, 0
+											, -1
+											);
 	weechat::infolist_free($infolist);
-	&debug("server: $server", $buffer);
+	&debug("server: $server");
 	my $nick = weechat::info_get('irc_nick', $server);
 	return $nick;
 }
@@ -130,19 +135,19 @@ sub uri_get {
 # Callback Subroutines
 sub uri_cb {
 	my ($data, $buffer, $date, $tags, $displayed, $highlight, $prefix, $message) = @_;
-	&debug(join('::', @_), $buffer);
+	&debug(join('::', @_));
 	my @url = &uri_parse($message);
 	# there is no need to go beyond this point otherwise
 	return weechat::WEECHAT_RC_OK unless (@url > 0);
 	unless($opt{xown}) {
 		my $nick = &getNick($buffer);
-		&debug("My nick is $nick", $buffer);
+		&debug("My nick is $nick");
 		return weechat::WEECHAT_RC_OK if($prefix =~ /.$nick/);
 	}
 	
 	for my $uri (@url) {
 		# Check our cache for a recent entry
-		if(exists $cache{$uri} && $cacheT{$uri} < (time - $opt{cachet})) {
+		if(exists $cache{$uri} && ($cacheT{$uri} > (time - $opt{cachet})) ) {
 			weechat::print($buffer, "[uri]\t".$cache{$uri});
 			$cacheT{$uri} = time;
 			&debug("Used Cache from " . $cacheT{$uri});
@@ -155,7 +160,7 @@ sub uri_cb {
 		} else {
 			next;
 		}
-		&debug("Raw retval = $retval", $buffer);
+		&debug("Raw retval = $retval");
 		# multiple small calls to engine more efficient than expressed in regex
 		$retval =~ s/\n//g;
 		$retval =~ s/^\s+//;
@@ -165,7 +170,7 @@ sub uri_cb {
 		weechat::print($buffer, "[uri]\t$retval");
 		# Add this to cache and do some cache pruning
 		if (scalar keys %cache > $opt{cache}) {
-			&debug("Cache Prune:");
+			&debug("Cache Prune");
 			%cache = %cacheT = (); # Will have to make this a proper prune later
 		}
 		$cache{$uri} = $retval;
