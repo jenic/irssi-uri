@@ -95,12 +95,12 @@ sub getNick {
 	my $infolist = weechat::infolist_get('buffer', $buffer, '');
 	weechat::infolist_next($infolist);
 	&debug(weechat::infolist_string($infolist, 'name'));
-	my $server = substr	( (	split /#/
-												, weechat::infolist_string($infolist, 'name')
-												)[0]
-											, 0
-											, -1
-											);
+	my $server = substr	(	(	split /#/
+							, weechat::infolist_string($infolist, 'name')
+							)[0]
+						, 0
+						, -1
+						);
 	weechat::infolist_free($infolist);
 	&debug("server: $server");
 	my $nick = weechat::info_get('irc_nick', $server);
@@ -158,6 +158,7 @@ sub uri_cb {
 		if($retval =~ /<title>(.*?)<\/title>/is) {
 			$retval = $1;
 		} else {
+			&debug("Gave up on matching <title>");
 			next;
 		}
 		&debug("Raw retval = $retval");
