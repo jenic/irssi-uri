@@ -163,7 +163,8 @@ sub uri_cb {
 
 		weechat::print($buffer, "[uri]\t$retval");
 		# Add this to cache and do some cache pruning
-		&debug("Cache Prune: " . pop sort keys %cacheT)
+		my $d = (sort keys %cacheT)[0];
+		&debug("Cache Prune: " . delete $cache{$d} .':'. delete $cacheT{$d})
 			if (scalar keys %cache > $opt{cache});
 		$cache{$uri} = $retval;
 		$cacheT{$uri} = time;
