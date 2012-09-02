@@ -24,7 +24,7 @@
 # Strips extraneous whitespace from titles before printing 
 # Smarter url detection
 # Port from irssi to WeeChat
-# Code rewrite sufficiently changes this script, relicensed as GPL3
+# Complete code rewrite relicensed as GPL3
 #
 #####################################################################
 
@@ -45,7 +45,7 @@ my %opt =	( 'debug'		=>	0
 
 weechat::register	( $self
 					, 'Jenic Rycr <jenic\@wubwub.me>'
-					, '0.5'
+					, '0.6'
 					, 'GPL3'
 					, 'URI Title Fetching'
 					, ''
@@ -64,8 +64,6 @@ my @blacklist = ( 'blinkenshell\.org'
 sub debug {
 	return unless $opt{debug};
 	my $msg = shift;
-	my ($s, $m, $h) = (localtime(time) )[0,1,2,3,6];
-	my $date = sprintf "%02d:%02d:%02d", $h, $m, $s;
 	weechat::print(weechat::current_buffer(), "[uri::debug]\t$msg");
 	return 1;
 }
@@ -134,7 +132,7 @@ sub uri_get {
 
 # Callback Subroutines
 sub uri_cb {
-	my ($data, $buffer, $date, $tags, $displayed, $highlight, $prefix, $message) = @_;
+	my ($data, $buffer, $date, $tags, $disp, $hl, $prefix, $message) = @_;
 	&debug(join('::', @_));
 	my @url = &uri_parse($message);
 	# there is no need to go beyond this point otherwise
@@ -189,13 +187,6 @@ sub toggle_opt {
 	}
 	return weechat::WEECHAT_RC_OK;
 }
-=item test
-sub test {
-	my ($data, $buffer, $date, $tags, $displayed, $highlight, $prefix, $message) = @_;
-	&debug( join('::', @_), $buffer);
-	return weechat::WEECHAT_RC_OK;
-}
-=cut
 
 # Settings
 for (keys %opt) {
@@ -207,5 +198,4 @@ for (keys %opt) {
 }
 
 weechat::hook_print('', 'notify_message', '://', 1, 'uri_cb', '');
-#weechat::hook_print('', 'irc_nick', '', 1, 'test', '');
 weechat::hook_config("plugins.var.perl.$self.*", 'toggle_opt', '');
