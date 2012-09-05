@@ -58,6 +58,7 @@ my $version = sprintf("%s", weechat::info_get('version',''));
 my @blacklist = ( 'blinkenshell\.org'
 				, 'xmonad\.org'
 				, 'utw\.me'
+				, 'bitcoin-otc\.com'
 				);
 
 # Helper Subroutines
