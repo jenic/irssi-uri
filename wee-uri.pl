@@ -46,7 +46,7 @@ my %opt =	( 'debug'		=>	0
 
 weechat::register	( $self
 					, 'Jenic Rycr <jenic\@wubwub.me>'
-					, '0.6'
+					, '0.7'
 					, 'GPL3'
 					, 'URI Title Fetching'
 					, ''
@@ -114,8 +114,12 @@ sub headcheck {
 	return 0;
 }
 sub titlecheck {
-	my ($response, $ua, $h, $data) = @_;
-	croak "complete" if ($data =~ /<title>(?:.*?)<\/title>/is);
+	my ($r, $ua, $h, $data) = @_;
+	&debug(join('::', @_));
+	if (!$r->is_redirect && $data =~ /<title>(?:.*?)<\/title>/is) {
+		debug("title found in chunk, croaking");
+		croak "complete";
+	}
 	return 1;
 }
 
@@ -142,7 +146,7 @@ sub uri_cb {
 	unless($opt{xown}) {
 		my $nick = &getNick($buffer);
 		&debug("My nick is $nick");
-		return weechat::WEECHAT_RC_OK if($prefix =~ /.$nick/);
+		return weechat::WEECHAT_RC_OK if($prefix =~ /.$nick$/);
 	}
 	
 	for my $uri (@url) {
@@ -155,13 +159,13 @@ sub uri_cb {
 		}
 		# No cache entry, get the uri
 		my $retval = uri_get($uri);
+		&debug("Raw retval = $retval");
 		if($retval =~ /<title>(.*?)<\/title>/is) {
 			$retval = $1;
 		} else {
 			&debug("Gave up on matching <title>");
 			next;
 		}
-		&debug("Raw retval = $retval");
 		# multiple small calls to engine more efficient than expressed in regex
 		$retval =~ s/\n//g;
 		$retval =~ s/^\s+//;
@@ -190,7 +194,7 @@ sub toggle_opt {
 	return weechat::WEECHAT_RC_OK;
 }
 sub dumpcache {
-	weechat::print(weechat::current_buffer(), "$_ => $cache{$_}\n")
+	weechat::print(weechat::current_buffer(), "[uri]\t$_ ($cache{$_})\n")
 		for (keys %cache);
 	return weechat::WEECHAT_RC_OK;
 }
