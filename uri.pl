@@ -14,7 +14,6 @@
 # Or if you're using Debian GNU/Linux:
 # apt-get update;apt-get install libwww-perl libcrypt-ssleay-perl
 #
-# UPDATE!
 # Script heavily modified by Jenic Rycr, list of changes:
 # Support multiple links per line
 # Ignore content that is not text/html

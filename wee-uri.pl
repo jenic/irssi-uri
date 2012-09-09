@@ -25,6 +25,7 @@
 # Smarter url detection
 # Port from irssi to WeeChat
 # Complete code rewrite relicensed as GPL3
+# Caching Support for frequent urls and to guard against abuse
 #
 #####################################################################
 
@@ -188,6 +189,11 @@ sub toggle_opt {
 	}
 	return weechat::WEECHAT_RC_OK;
 }
+sub dumpcache {
+	weechat::print(weechat::current_buffer(), "$_ => $cache{$_}\n")
+		for (keys %cache);
+	return weechat::WEECHAT_RC_OK;
+}
 
 # Settings
 for (keys %opt) {
@@ -200,3 +206,4 @@ for (keys %opt) {
 
 weechat::hook_print('', 'notify_message', '://', 1, 'uri_cb', '');
 weechat::hook_config("plugins.var.perl.$self.*", 'toggle_opt', '');
+weechat::hook_command($self, 'URI Caching Hash', "Dumps contents of cache\n", '', '', 'dumpcache', '');
