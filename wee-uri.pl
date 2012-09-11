@@ -148,13 +148,14 @@ sub uri_cb {
 		&debug("My nick is $nick");
 		return weechat::WEECHAT_RC_OK if($prefix =~ /.$nick$/);
 	}
+
 	
 	for my $uri (@url) {
 		# Check our cache for a recent entry
 		if(exists $cache{$uri} && ($cacheT{$uri} > (time - $opt{cachet})) ) {
 			weechat::print($buffer, "[uri]\t".$cache{$uri});
-			$cacheT{$uri} = time;
 			&debug("Used Cache from " . $cacheT{$uri});
+			$cacheT{$uri} = time;
 			next;
 		}
 		# No cache entry, get the uri
@@ -174,12 +175,34 @@ sub uri_cb {
 
 		weechat::print($buffer, "[uri]\t$retval");
 		# Add this to cache and do some cache pruning
-		if (scalar keys %cache > $opt{cache}) {
-			&debug("Cache Prune");
-			%cache = %cacheT = (); # Will have to make this a proper prune later
+		# This pruning is a fall back incase proper prune fails for w/e reason.
+		# Don't want memory filling up with url's!
+		if (scalar keys %cache > ($opt{cache}*2)) {
+			&debug("Cache Prune Fallback! Something weird happened!");
+			%cache = %cacheT = ();
 		}
 		$cache{$uri} = $retval;
 		$cacheT{$uri} = time;
+	}
+	# Cache Pruning
+	if(scalar keys %cache > $opt{cache}) {
+		my @ordered =	map { $_->[0] } # Undecorate
+					sort { $a->[1] <=> $b->[1] } # Sort
+					map { [$_, $cacheT{$_}] } # Decorate
+					keys %cache;
+		&debug("Sorted Cache: @ordered");
+		if(@url > 1) {
+			my $t = scalar keys %cache;
+			my $n = ($t - $opt{cache});
+			my @trunc = splice(@ordered, 0, $n);
+			&debug("Cache is pruning @trunc (t=$t n=$n)");
+			delete @cache{@trunc};
+			delete @cacheT{@trunc};
+		} else {
+			&debug("Cache is pruning $ordered[0]");
+			delete $cache{$ordered[0]};
+			delete $cacheT{$ordered[0]};
+		}
 	}
 	return weechat::WEECHAT_RC_OK;
 }
