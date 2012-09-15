@@ -187,9 +187,9 @@ sub uri_cb {
 	# Cache Pruning
 	if(scalar keys %cache > $opt{cache}) {
 		my @ordered =	map { $_->[0] } # Undecorate
-					sort { $a->[1] <=> $b->[1] } # Sort
-					map { [$_, $cacheT{$_}] } # Decorate
-					keys %cache;
+						sort { $a->[1] <=> $b->[1] } # Sort
+						map { [$_, $cacheT{$_}] } # Decorate
+						keys %cache;
 		&debug("Sorted Cache: @ordered");
 		if(@url > 1) {
 			my $t = scalar keys %cache;
