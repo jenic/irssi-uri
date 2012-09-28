@@ -46,7 +46,7 @@ my %opt =	( 'debug'		=>	0
 
 weechat::register	( $self
 					, 'Jenic Rycr <jenic\@wubwub.me>'
-					, '0.7'
+					, '0.8'
 					, 'GPL3'
 					, 'URI Title Fetching'
 					, ''
@@ -85,6 +85,8 @@ sub uri_parse {
 	my @urljar = ($url =~ /(https?:\/\/(?:[^\s"';]+))/g);
 	# Filter out blacklisted links
 	@urljar = grep { &chklist($_) } @urljar;
+	# Remove extraneous slashes
+	@urljar = map { s/\/$//;$_; } @urljar;
 	return (@urljar > 0) ? @urljar : ();
 }
 sub getNick {
@@ -110,7 +112,8 @@ sub getNick {
 # LWP Handler Subroutines
 sub headcheck {
 	my ($response, $ua, $h) = @_;
-	croak "complete" unless ($response->header('Content-Type') =~ /text\/html/);
+	my $v = $response->header('Content-Type');
+	croak "complete" unless ($v && $v =~ /text\/html/);
 	return 0;
 }
 sub titlecheck {
@@ -148,7 +151,6 @@ sub uri_cb {
 		&debug("My nick is $nick");
 		return weechat::WEECHAT_RC_OK if($prefix =~ /.$nick$/);
 	}
-
 	
 	for my $uri (@url) {
 		# Check our cache for a recent entry
@@ -219,6 +221,7 @@ sub toggle_opt {
 sub dumpcache {
 	weechat::print(weechat::current_buffer(), "[uri]\t$_ ($cache{$_})\n")
 		for (keys %cache);
+		%cache = %cacheT = ();
 	return weechat::WEECHAT_RC_OK;
 }
 
