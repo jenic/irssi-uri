@@ -36,17 +36,20 @@ use HTML::Entities;
 
 my $self = 'uri';
 my (%cache, %cacheT);
+my @blacklist;
+
 # Default Options
 my %opt =	( 'debug'		=>	0
 			, 'xown'		=>	0
 			, 'single_nick'	=>	0
 			, 'cache'		=>	5
 			, 'cachet'		=> 3600
+			, 'blfile'		=> $ENV{HOME} . "/.weechat/.uribl"
 			);
 
 weechat::register	( $self
 					, 'Jenic Rycr <jenic\@wubwub.me>'
-					, '0.8'
+					, '0.9'
 					, 'GPL3'
 					, 'URI Title Fetching'
 					, ''
@@ -56,11 +59,15 @@ my $version = sprintf("%s", weechat::info_get('version',''));
 
 ## URL Blacklist
 #  Evaluated as regular expressions
-my @blacklist = ( 'blinkenshell\.org'
-				, 'xmonad\.org'
-				, 'utw\.me'
-				, 'bitcoin-otc\.com'
-				);
+sub blup {
+	return weechat::WEECHAT_RC_OK unless (-e $opt{blfile});
+	open FH, $opt{blfile} or return weechat::WEECHAT_RC_OK;
+	my @bl = <FH>;
+	chomp @bl;
+	close FH;
+	@blacklist = @bl;
+	return weechat::WEECHAT_RC_OK;
+}
 
 # Helper Subroutines
 sub debug {
@@ -82,11 +89,11 @@ sub chklist {
 }
 sub uri_parse {
 	my ($url) = @_;
-	my @urljar = ($url =~ /(https?:\/\/(?:[^\s"';]+))/g);
+	my @urljar = ($url =~ m{(https?://(?:[^\s"';]+).*(?!/).)}g);
 	# Filter out blacklisted links
 	@urljar = grep { &chklist($_) } @urljar;
 	# Remove extraneous slashes
-	@urljar = map { s/\/$//;$_; } @urljar;
+	#@urljar = map { s/\/$//;$_; } @urljar;
 	return (@urljar > 0) ? @urljar : ();
 }
 sub getNick {
@@ -234,6 +241,24 @@ for (keys %opt) {
 	}
 }
 
+# Load Blacklist
+&blup if (-e $opt{blfile});
+
 weechat::hook_print('', 'notify_message', '://', 1, 'uri_cb', '');
 weechat::hook_config("plugins.var.perl.$self.*", 'toggle_opt', '');
-weechat::hook_command($self, 'URI Caching Hash', "Dumps contents of cache\n", '', '', 'dumpcache', '');
+weechat::hook_command( $self
+					 , 'URI Caching Hash'
+					 , "Dumps contents of cache\n"
+					 , ''
+					 , ''
+					 , 'dumpcache'
+					 , ''
+					 );
+weechat::hook_command( 'blup'
+					 , 'Update BL'
+					 , "Updates Blacklist\n"
+					 , ''
+					 , ''
+					 , 'blup'
+					 , ''
+					 );
