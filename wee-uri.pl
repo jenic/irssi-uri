@@ -90,11 +90,11 @@ sub chklist {
 }
 sub uri_parse {
 	my ($url) = @_;
-	my @urljar = ($url =~ m{(https?://(?:[^\s"';]+).*(?!/).)}g);
+	my @urljar = ($url =~ m{(https?://(?:[^\s"';]+))}g);
 	# Filter out blacklisted links
 	@urljar = grep { &chklist($_) } @urljar;
 	# Remove extraneous slashes
-	#@urljar = map { s/\/$//;$_; } @urljar;
+	@urljar = map { s/\/$//;$_; } @urljar;
 	return (@urljar > 0) ? @urljar : ();
 }
 sub getNick {
