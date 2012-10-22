@@ -248,16 +248,16 @@ for (keys %opt) {
 weechat::hook_print('', 'notify_message', '://', 1, 'uri_cb', '');
 weechat::hook_config("plugins.var.perl.$self.*", 'toggle_opt', '');
 weechat::hook_command	( $self
-			, 'URI Caching Hash'
-			, "Dumps contents of cache\n"
+			, 'Dumps contents of cache'
+			, ""
 			, ''
 			, ''
 			, 'dumpcache'
 			, ''
 			);
 weechat::hook_command	( 'blup'
-			, 'Update BL'
-			, "Updates Blacklist\n"
+			, 'Updates Blacklist'
+			, ""
 			, ''
 			, ''
 			, 'blup'
