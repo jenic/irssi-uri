@@ -178,9 +178,8 @@ sub uri_cb {
 		    next;
 	    }
 	    # multiple small calls to engine more efficient than expressed in regex
-	    $retval =~ s/\n//g;
-	    $retval =~ s/^\s+//;
-	    $retval =~ s/\s+$//;
+	    $retval =~ s/[\r\n]//g;
+	    $retval =~ s/\s+/ /g;
 	    $retval = decode_entities($retval);
 
 	    weechat::print($buffer, "[uri]\t$retval");
