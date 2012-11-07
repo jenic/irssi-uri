@@ -35,21 +35,35 @@ use Carp qw(croak);
 use HTML::Entities;
 
 my $self = 'uri';
+my $uribuf;
 my (%cache, %cacheT);
 my @blacklist;
 
 # Default Options
-my %opt =	( 'debug'		=>	0
-		, 'xown'		=>	0
-		, 'single_nick'		=>	0
-		, 'cache'		=>	5
-		, 'cachet'		=>	3600
+# debug:debugging messages (on | off)
+# xown:process links from self (on | off)
+# single_nick:staticly set your nick (string | off)
+# cache:how many entries to cache (number)
+# cachet:Keep cache for n seconds (number)
+# blfile:full path of blacklist file (file)
+# mode:operation mode (number)
+## 0 = Print in current buffer
+## 1 = Print in dedicated buffer
+## 2 = Both 0 & 1
+#window:name of buffer to print in for mode 1&2 (string)
+my %opt =	( 'debug'		=> 0
+		, 'xown'		=> 0
+		, 'single_nick'		=> 0
+		, 'cache'		=> 5
+		, 'cachet'		=> 3600
 		, 'blfile'		=> $ENV{HOME} . "/.weechat/.uribl"
+		, 'mode'		=> 0
+		, 'window'		=> $self
 		);
 
 weechat::register	( $self
 			, 'Jenic Rycr <jenic\@wubwub.me>'
-			, '0.8'
+			, '0.9'
 			, 'GPL3'
 			, 'URI Title Fetching'
 			, ''
@@ -149,9 +163,11 @@ sub uri_get {
 
 # Callback Subroutines
 sub uri_cb {
-    my ($data, $buffer, $date, $tags, $disp, $hl, $prefix, $message) = @_;
+    my ($data, $buffer, $date, $tags, $disp, $hl, $prefix, $msg) = @_;
+    # Set Printing Mode
+    my $out = ($opt{mode}) ? $uribuf : $buffer;
     &debug(join('::', @_));
-    my @url = &uri_parse($message);
+    my @url = &uri_parse($msg);
     # there is no need to go beyond this point otherwise
     return weechat::WEECHAT_RC_OK unless (@url > 0);
     unless($opt{xown}) {
@@ -163,7 +179,9 @@ sub uri_cb {
     for my $uri (@url) {
 	# Check our cache for a recent entry
 	    if(exists $cache{$uri} && ($cacheT{$uri} > (time - $opt{cachet})) ) {
-		    weechat::print($buffer, "[uri]\t".$cache{$uri});
+		    weechat::print($out, "[uri]\t".$cache{uri});
+		    weechat::print($buffer, "[uri]\t".$cache{$uri})
+		    	if ($opt{mode} == 2);
 		    &debug("Used Cache from " . $cacheT{$uri});
 		    $cacheT{$uri} = time;
 		    next;
@@ -182,7 +200,9 @@ sub uri_cb {
 	    $retval =~ s/\s+/ /g;
 	    $retval = decode_entities($retval);
 
-	    weechat::print($buffer, "[uri]\t$retval");
+	    weechat::print($out, "[uri]\t$retval");
+	    weechat::print($buffer, "[uri]\t$retval")
+	    	if ($opt{mode} == 2);
 	    # Add this to cache and do some cache pruning
 	    # This pruning is a fall back incase proper prune fails for w/e reason.
 	    # Don't want memory filling up with url's!
@@ -221,15 +241,19 @@ sub toggle_opt {
     if(exists $opt{$o}) {
 	    $opt{$o} = $value;
     } else {
-	    weechat::print(weechat::current_buffer(), "$option doesn't exist!");
+	    weechat::print('', "$option doesn't exist!");
     }
     return weechat::WEECHAT_RC_OK;
 }
 sub dumpcache {
-    weechat::print(weechat::current_buffer(), "[uri]\t$_ ($cache{$_})\n")
+    weechat::print('', "[uri]\t$_ ($cache{$_})\n")
 	    for (keys %cache);
 	    %cache = %cacheT = ();
     return weechat::WEECHAT_RC_OK;
+}
+sub buff_close {
+	$opt{mode} = 0;
+	return weechat::WEECHAT_RC_OK;
 }
 
 # Settings
@@ -241,14 +265,20 @@ for (keys %opt) {
     }
 }
 
-# Load Blacklist
-&blup if (-e $opt{blfile});
+&blup; # Load Blacklist
+
+# Do we need to create a buffer?
+$uribuf = weechat::info_get($opt{window}, '') || 0;
+if ($opt{mode} > 0 && !$uribuf) {
+	$uribuf = weechat::buffer_new($opt{window}, '', '', "buff_close", '');
+	weechat::buffer_set($uribuf, "title", $opt{window});
+}
 
 weechat::hook_print('', 'notify_message', '://', 1, 'uri_cb', '');
 weechat::hook_config("plugins.var.perl.$self.*", 'toggle_opt', '');
 weechat::hook_command	( $self
 			, 'Dumps contents of cache'
-			, ""
+			, ''
 			, ''
 			, ''
 			, 'dumpcache'
@@ -256,7 +286,7 @@ weechat::hook_command	( $self
 			);
 weechat::hook_command	( 'blup'
 			, 'Updates Blacklist'
-			, ""
+			, ''
 			, ''
 			, ''
 			, 'blup'
