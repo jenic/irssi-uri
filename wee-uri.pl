@@ -179,7 +179,7 @@ sub uri_cb {
     for my $uri (@url) {
 	# Check our cache for a recent entry
 	    if(exists $cache{$uri} && ($cacheT{$uri} > (time - $opt{cachet})) ) {
-		    weechat::print($out, "[uri]\t".$cache{uri});
+		    weechat::print($out, "[uri]\t$uri (".$cache{$uri}.')');
 		    weechat::print($buffer, "[uri]\t".$cache{$uri})
 		    	if ($opt{mode} == 2);
 		    &debug("Used Cache from " . $cacheT{$uri});
@@ -200,7 +200,7 @@ sub uri_cb {
 	    $retval =~ s/\s+/ /g;
 	    $retval = decode_entities($retval);
 
-	    weechat::print($out, "[uri]\t$retval");
+	    weechat::print($out, "[uri]\t$uri ($retval)");
 	    weechat::print($buffer, "[uri]\t$retval")
 	    	if ($opt{mode} == 2);
 	    # Add this to cache and do some cache pruning
@@ -270,6 +270,7 @@ for (keys %opt) {
 # Do we need to create a buffer?
 $uribuf = weechat::info_get($opt{window}, '') || 0;
 if ($opt{mode} > 0 && !$uribuf) {
+	debug('Building dedicated buffer named: ' . $opt{window});
 	$uribuf = weechat::buffer_new($opt{window}, '', '', "buff_close", '');
 	weechat::buffer_set($uribuf, "title", $opt{window});
 }
