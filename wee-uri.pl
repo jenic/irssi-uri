@@ -176,9 +176,9 @@ sub uri_cb {
 	return weechat::WEECHAT_RC_OK if($prefix =~ /.$nick$/);
     }
     
-    for my $uri (@url) {
-	# Check our cache for a recent entry
-	    if(exists $cache{$uri} && ($cacheT{$uri} > (time - $opt{cachet})) ) {
+	for my $uri (@url) {
+		# Check our cache for a recent entry
+	    if(exists $cache{$uri} && ($cacheT{$uri} > (time - $opt{cachet}))) {
 		    weechat::print($out, "[uri]\t$uri (".$cache{$uri}.')');
 		    weechat::print($buffer, "[uri]\t".$cache{$uri})
 		    	if ($opt{mode} == 2);
@@ -277,7 +277,7 @@ if ($opt{mode} > 0 && !$uribuf) {
 
 weechat::hook_print('', 'notify_message', '://', 1, 'uri_cb', '');
 weechat::hook_config("plugins.var.perl.$self.*", 'toggle_opt', '');
-weechat::hook_command	( $self
+weechat::hook_command	( "${self}_dump"
 			, 'Dumps contents of cache'
 			, ''
 			, ''
@@ -285,7 +285,7 @@ weechat::hook_command	( $self
 			, 'dumpcache'
 			, ''
 			);
-weechat::hook_command	( 'blup'
+weechat::hook_command	( "${self}_update"
 			, 'Updates Blacklist'
 			, ''
 			, ''
