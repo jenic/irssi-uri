@@ -36,7 +36,7 @@ use HTML::Entities;
 
 my $self = 'uri';
 my $uribuf;
-my (%cache, %cacheT);
+my %cache;
 my @blacklist;
 
 # Default Options
@@ -178,12 +178,12 @@ sub uri_cb {
     
 	for my $uri (@url) {
 		# Check our cache for a recent entry
-	    if(exists $cache{$uri} && ($cacheT{$uri} > (time - $opt{cachet}))) {
-		    weechat::print($out, "[uri]\t$uri (".$cache{$uri}.')');
-		    weechat::print($buffer, "[uri]\t".$cache{$uri})
+	    if(exists $cache{$uri} && ($cache{$uri}->{t} > ($date - $opt{cachet}))) {
+		    weechat::print($out, "[uri]\t$uri (".$cache{$uri}->{u}.')');
+		    weechat::print($buffer, "[uri]\t".$cache{$uri}->{u})
 		    	if ($opt{mode} == 2);
-		    &debug("Used Cache from " . $cacheT{$uri});
-		    $cacheT{$uri} = time;
+		    &debug("Used Cache from " . $cache{$uri}->{t});
+		    $cache{$uri}->{t} = $date;
 		    next;
 	    }
 	    # No cache entry, get the uri
@@ -208,16 +208,17 @@ sub uri_cb {
 	    # Don't want memory filling up with url's!
 	    if (scalar keys %cache > ($opt{cache}*2)) {
 		    &debug("Cache Prune Fallback! Something weird happened!");
-		    %cache = %cacheT = ();
+		    %cache = ();
 	    }
-	    $cache{$uri} = $retval;
-	    $cacheT{$uri} = time;
+	    $cache{$uri} = ();
+	    $cache{$uri}->{u} = $retval;
+	    $cache{$uri}->{t} = $date;
     }
     # Cache Pruning
     if(scalar keys %cache > $opt{cache}) {
 	    my @ordered =	map { $_->[0] } # Undecorate
 				sort { $a->[1] <=> $b->[1] } # Sort
-				map { [$_, $cacheT{$_}] } # Decorate
+				map { [$_, $cache{$_}->{t}] } # Decorate
 				keys %cache;
 	    &debug("Sorted Cache: @ordered");
 	    if(@url > 1) {
@@ -226,11 +227,9 @@ sub uri_cb {
 		    my @trunc = splice(@ordered, 0, $n);
 		    &debug("Cache is pruning @trunc (t=$t n=$n)");
 		    delete @cache{@trunc};
-		    delete @cacheT{@trunc};
 	    } else {
 		    &debug("Cache is pruning $ordered[0]");
 		    delete $cache{$ordered[0]};
-		    delete $cacheT{$ordered[0]};
 	    }
     }
     return weechat::WEECHAT_RC_OK;
@@ -246,9 +245,9 @@ sub toggle_opt {
     return weechat::WEECHAT_RC_OK;
 }
 sub dumpcache {
-    weechat::print('', "[uri]\t$_ ($cache{$_})\n")
+    weechat::print('', "[uri]\t$_ ($cache{$_}->{u})\n")
 	    for (keys %cache);
-	    %cache = %cacheT = ();
+	    %cache = ();
     return weechat::WEECHAT_RC_OK;
 }
 sub buff_close {
