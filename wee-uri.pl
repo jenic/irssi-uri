@@ -134,7 +134,7 @@ sub uri_get {
 	my $c = 'perl -MLWP::UserAgent -MCarp -e\'' .
 	'sub hc{my($r,$u,$h)=@_;my $v=$r->header("Content-Type");croak "complete" if($v && $v !~ /text\/html/);return 0;}' .
 	'sub tc{my($r,$u,$h,$d)=@_;if(!$r->is_redirect && $d=~/<title>.*<\/title>/is){croak "complete";}return 1;}' .
-	'my $d=q(http://google.com);system(q(touch ~/test);my $u=LWP::UserAgent->new(env_proxy=>1,keep_alive=>1,timeout=>8);$u->max_size(1024);' .
+	'my $d=q('.$uri.');my $u=LWP::UserAgent->new(env_proxy=>1,keep_alive=>1,timeout=>8);$u->max_size(1024);' .
 	'$u->add_handler(response_header=>*hc{CODE});$u->add_handler(response_data=>*tc{CODE});' .
 	'my $r=$u->get($d);print(($r->is_success)?$r->content:0);';
 	&debug("Hooking process for $uri");
