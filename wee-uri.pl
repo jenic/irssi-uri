@@ -131,6 +131,11 @@ sub getNick {
 # Where the magic happens
 sub uri_get {
 	my ($uri, $buf) = @_;
+	return 0 if(exists $cache{$uri}); # a process is already running
+	$cache{$uri} = ();
+	$cache{$uri}->{t} = 0;
+	$cache{$uri}->{u} = 'Loading...';
+
 	my $c = 'perl -MLWP::UserAgent -MCarp -e\'' .
 	'sub hc{my($r,$u,$h)=@_;my $v=$r->header("Content-Type");croak "complete" if($v && $v !~ /text\/html/);return 0;}' .
 	'sub tc{my($r,$u,$h,$d)=@_;if(!$r->is_redirect && $d=~/<title>.*<\/title>/is){croak "complete";}return 1;}' .
