@@ -61,7 +61,7 @@ my %opt =	( 'debug'		=> 0
 
 weechat::register	( $self
 			, 'Jenic Rycr <jenic\@wubwub.me>'
-			, '1.0'
+			, '1.1'
 			, 'GPL3'
 			, 'URI Title Fetching'
 			, ''
@@ -145,9 +145,16 @@ sub uri_get {
 sub uri_process_cb {
 	my ($data, $cmd, $rc, $stdout, $stderr) = @_;
 	&debug(join('||',@_));
-	my $title;
+	my ($title, $out, $format);
 	my ($uri, $buffer) = split ' ', $data;
-	my $out = ($opt{mode}) ? $uribuf : $buffer;
+	my $bufname = weechat::buffer_get_string($buffer, 'name');
+	if($opt{mode}) {
+		$out = $uribuf;
+		$format = "[uri]\t%s (%s) %s";
+	} else {
+		$out = $buffer;
+		$format = "[uri]\t%s";
+	}
 	if($stdout =~ /<title>(.*?)<\/title>/is) {
 		if(!$1) {
 			&debug("Pattern matched but title empty");
@@ -164,7 +171,7 @@ sub uri_process_cb {
 	$title =~ s/\s+/ /g;
 	$title = decode_entities($title);
 
-	weechat::print($out, "[uri]\t$uri ($title)");
+	weechat::print($out, sprintf($format, $title, $uri, $bufname));
 	weechat::print($buffer, "[uri]\t$title")
 		if ($opt{mode} == 2);
 	# Add this to cache and do some cache pruning
@@ -176,12 +183,20 @@ sub uri_process_cb {
 	}
 	$cache{$uri}->{u} = $title;
 	$cache{$uri}->{t} = time;
+	$cache{$uri}->{b} = weechat::buffer_get_string($buffer, 'name');
 
 	return weechat::WEECHAT_RC_OK;
 }
 sub uri_cb {
 	my ($data, $buffer, $date, $tags, $disp, $hl, $prefix, $msg) = @_;
-	my $out = ($opt{mode}) ? $uribuf : $buffer;
+	my ($out, $format);
+	if($opt{mode}) {
+		$out = $uribuf;
+		$format = "[uri]\t%s (%s)";
+	} else {
+		$out = $buffer;
+		$format = "[uri]\t%s";
+	}
 	my @url = &uri_parse($msg);
 
 	&debug(join('::', @_));
@@ -197,8 +212,8 @@ sub uri_cb {
 	for my $uri (@url) {
 		# Check our cache for a recent entry
 		if(exists $cache{$uri} && ($cache{$uri}->{t} > ($date - $opt{cachet}))) {
-			weechat::print($out, "[uri]\t$uri (".$cache{$uri}->{u}.')');
-			weechat::print($buffer, "[uri]\t".$cache{$uri}->{u})
+			weechat::print($out, sprintf($format, $cache{$uri}->{u}, $uri));
+			weechat::print($buffer, sprintf("[uri]\t%s", $cache{$uri}->{u}))
 				if ($opt{mode} == 2);
 			&debug("Used Cache from " . $cache{$uri}->{t});
 			$cache{$uri}->{t} = $date;
@@ -242,8 +257,12 @@ sub toggle_opt {
 	return weechat::WEECHAT_RC_OK;
 }
 sub dumpcache {
-	weechat::print('', "[uri]\t$_ ($cache{$_}->{u})\n")
-		for (keys %cache);
+	weechat::print('',
+		sprintf("[uri]\t%s (%s) %s\n",
+		$cache{$_}->{u},
+		$_,
+		$cache{$_}->{b})
+	) for (keys %cache);
 	%cache = ();
 	return weechat::WEECHAT_RC_OK;
 }
