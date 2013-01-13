@@ -155,7 +155,7 @@ sub uri_process_cb {
 	my $bufname = weechat::buffer_get_string($buffer, 'name');
 	if($opt{mode}) {
 		$out = $uribuf;
-		$format = "[uri]\t%s (%s) %s";
+		$format = "$bufname\t%s <%s>";
 	} else {
 		$out = $buffer;
 		$format = "[uri]\t%s";
@@ -177,7 +177,7 @@ sub uri_process_cb {
 	$title =~ s/(^\s+|\s+$)//;
 	$title = decode_entities($title);
 
-	weechat::print($out, sprintf($format, $title, $uri, $bufname));
+	weechat::print($out, sprintf($format, $title, $uri));
 	weechat::print($buffer, "[uri]\t$title")
 		if ($opt{mode} == 2);
 	# Add this to cache and do some cache pruning
