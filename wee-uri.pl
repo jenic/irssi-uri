@@ -198,7 +198,7 @@ sub uri_cb {
 	my ($out, $format);
 	if($opt{mode}) {
 		$out = $uribuf;
-		$format = "[uri]\t%s (%s)";
+		$format = "[uri]\t%s <%s>";
 	} else {
 		$out = $buffer;
 		$format = "[uri]\t%s";
