@@ -49,6 +49,8 @@ my @blacklist;
 ## 1 = Print in dedicated buffer
 ## 2 = Both 0 & 1
 #window:name of buffer to print in for mode 1&2 (string)
+#maxdl:Maximum limit on download (in bytes)
+#timeout:Child process execution time limit (in milliseconds)
 my %opt =	( 'debug'		=> 0
 		, 'xown'		=> 0
 		, 'single_nick'		=> 0
@@ -57,11 +59,13 @@ my %opt =	( 'debug'		=> 0
 		, 'blfile'		=> $ENV{HOME} . "/.weechat/.uribl"
 		, 'mode'		=> 0
 		, 'window'		=> $self
+		, 'maxdl'		=> 1e6
+		, 'timeout'		=> 9001
 		);
 
 weechat::register	( $self
 			, 'Jenic Rycr <jenic\@wubwub.me>'
-			, '1.1'
+			, '1.3'
 			, 'GPL3'
 			, 'URI Title Fetching'
 			, ''
@@ -77,17 +81,7 @@ sub debug {
 	weechat::print(weechat::current_buffer(), "[uri::debug]\t$msg");
 	return 1;
 }
-## URL Blacklist
-###  Evaluated as regular expressions
-sub blup {
-	return weechat::WEECHAT_RC_OK unless (-e $opt{blfile});
-	open FH, $opt{blfile} or return weechat::WEECHAT_RC_OK;
-	my @bl = <FH>;
-	chomp @bl;
-	close FH;
-	@blacklist = @bl;
-	return weechat::WEECHAT_RC_OK;
-}
+## BHL check
 sub chklist {
 	my $link = shift;
 	my $r = 1;
@@ -134,25 +128,28 @@ sub uri_get {
 	return 0 if(exists $cache{$uri}); # a process is already running
 	$cache{$uri} = ();
 	$cache{$uri}->{t} = 0;
-	$cache{$uri}->{u} = 'Loading...';
+	$cache{$uri}->{u} = '{PLACEHOLDER}';
+	$cache{$uri}->{b} = $buf;
 
+	# This is gross and needs to be done in a better way.
 	my $c = 'perl -MLWP::UserAgent -MCarp -e\'' .
 	'sub hc{my($r,$u,$h)=@_;my $v=$r->header("Content-Type");croak "complete" if($v && $v !~ /text\/html/);return 0;}' .
 	'sub tc{my($r,$u,$h,$d)=@_;if(!$r->is_redirect && $d=~/<title>.*<\/title>/is){croak "complete";}return 1;}' .
-	'my $d=q('.$uri.');my $u=LWP::UserAgent->new(env_proxy=>1,keep_alive=>1,timeout=>8);$u->max_size(1024);' .
+	'my $d=q('.$uri.');my $u=LWP::UserAgent->new(env_proxy=>1,keep_alive=>1,timeout=>8);$u->max_size('.$opt{maxdl}.');' .
 	'$u->add_handler(response_header=>*hc{CODE});$u->add_handler(response_data=>*tc{CODE});' .
 	'my $r=$u->get($d);print(($r->is_success)?$r->content:0);';
 	&debug("Hooking process for $uri");
-	weechat::hook_process($c, 10000, 'uri_process_cb', "@_");
+	weechat::hook_process($c, $opt{timeout}, 'uri_process_cb', "@_");
 	return 1;
 }
+
 # Callback Subroutines
 sub uri_process_cb {
 	my ($data, $cmd, $rc, $stdout, $stderr) = @_;
 	&debug(join('||',@_));
 	my ($title, $out, $format);
 	my ($uri, $buffer) = split ' ', $data;
-	my $bufname = weechat::buffer_get_string($buffer, 'name');
+	my $bufname = weechat::buffer_get_string($buffer, 'short_name');
 	if($opt{mode}) {
 		$out = $uribuf;
 		$format = "$bufname\t%s <%s>";
@@ -189,7 +186,7 @@ sub uri_process_cb {
 	}
 	$cache{$uri}->{u} = $title;
 	$cache{$uri}->{t} = time;
-	$cache{$uri}->{b} = weechat::buffer_get_string($buffer, 'name');
+	$cache{$uri}->{b} = weechat::buffer_get_string($buffer, 'short_name');
 
 	return weechat::WEECHAT_RC_OK;
 }
@@ -227,6 +224,7 @@ sub uri_cb {
 		}
 
 		# No cache entry, get the uri
+		&debug("Call to uri_get($uri, $buffer)");
 		uri_get($uri, $buffer);
 	}
 	
@@ -252,6 +250,18 @@ sub uri_cb {
 	return weechat::WEECHAT_RC_OK;
 }
 
+## URL Blacklist
+###  Evaluated as regular expressions
+sub blup {
+	return weechat::WEECHAT_RC_OK unless (-e $opt{blfile});
+	open FH, $opt{blfile} or return weechat::WEECHAT_RC_OK;
+	my @bl = <FH>;
+	close FH;
+	chomp @bl;
+	@blacklist = @bl;
+	weechat::print('', "$self loaded ".@bl.' items to BHL');
+	return weechat::WEECHAT_RC_OK;
+}
 sub toggle_opt {
 	my ($pointer, $option, $value) = @_;
 	my $o = (split /\./, $option)[-1];
