@@ -132,12 +132,9 @@ sub uri_get {
 	$cache{$uri}->{b} = $buf;
 
 	# This is gross and needs to be done in a better way.
-	my $c = 'perl -MLWP::UserAgent -MCarp -e\'' .
-	'sub hc{my($r,$u,$h)=@_;my $v=$r->header("Content-Type");croak "complete" if($v && $v !~ /text\/html/);return 0;}' .
-	'sub tc{my($r,$u,$h,$d)=@_;if(!$r->is_redirect && $d=~/<title>.*<\/title>/is){croak "complete";}return 1;}' .
-	'my $d=q('.$uri.');my $u=LWP::UserAgent->new(env_proxy=>1,keep_alive=>1,timeout=>8);$u->max_size('.$opt{maxdl}.');' .
-	'$u->add_handler(response_header=>*hc{CODE});$u->add_handler(response_data=>*tc{CODE});' .
-	'my $r=$u->get($d);print(($r->is_success)?$r->content:0);';
+	# *1 to allow perlisms such as 1e6
+	# /2000 to convert timeout from millisecond to seconds and cut in half
+	my $c = 'curl --max-filesize ' . ($opt{maxdl}*1) . ' -m ' . int($opt{timeout}/2000) . " -Ls $uri";
 	&debug("Hooking process for $uri");
 	weechat::hook_process($c, $opt{timeout}, 'uri_process_cb', "@_");
 	return 1;
@@ -149,6 +146,8 @@ sub uri_process_cb {
 	&debug(join('||',@_));
 	my ($title, $out, $format);
 	my ($uri, $buffer) = split ' ', $data;
+	return weechat::WEECHAT_RC_OK
+		if (exists $cache{$uri} && $cache{$uri}->{t});
 	my $bufname = weechat::buffer_get_string($buffer, 'short_name');
 	if($opt{mode}) {
 		$out = $uribuf;
@@ -231,7 +230,7 @@ sub uri_cb {
 	# Cache Pruning
 	if(scalar keys %cache > $opt{cache}) {
 		my @ordered =	map { $_->[0] } # Undecorate
-				sort { $a->[1] <=> $b->[1] } # Sort
+				sort { $b->[1] <=> $a->[1] } # Sort
 				map { [$_, $cache{$_}->{t}] } # Decorate
 				keys %cache;
 		&debug("Sorted Cache: @ordered");
