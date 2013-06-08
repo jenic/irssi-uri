@@ -2,16 +2,13 @@
 # This script fetches the <title> of a URL posted and prints it
 # in WeeChat.
 #
-# This script is based on the fork of Toni Viemerö's spotifyuri
-# script, by Caesar Ahlenhed for irssi. Their websites are below:
+# This script is originally based on the fork of Toni Viemerö's
+# spotifyuri script, by Caesar Ahlenhed for irssi.
+# Their websites are below:
 # http://spotify.url.fi/
 # http://sniker.codebase.nu/
 #
-# You will need the following packages:
-# LWP::UserAgent (You can install this using cpan -i LWP::UserAgent)
-# Crypt::SSLeay  (You can install this using cpan -i Crypt::SSLeay)
-# Or if you're using Debian:
-# apt-get update;apt-get install libwww-perl libcrypt-ssleay-perl
+# Requires curl
 #
 # Script heavily modified by Jenic Rycr, list of changes:
 # Support multiple links per line
@@ -38,7 +35,7 @@ my %cache;
 my @blacklist;
 
 # Default Options
-# debug:debugging messages (on | off)
+# debug:debugging messages (number > 0 | off)
 # xown:process links from self (on | off)
 # single_nick:staticly set your nick (string | off)
 # cache:how many entries to cache (number)
@@ -77,10 +74,20 @@ my $version = sprintf("%s", weechat::info_get('version',''));
 # Helper Subroutines
 sub debug {
 	return unless $opt{debug};
-	my $msg = shift;
+	my ($msg, $lvl) = (@_);
+	return if ( $lvl && $opt{debug} < $lvl);
 	weechat::print(weechat::current_buffer(), "[uri::debug]\t$msg");
 	return 1;
 }
+
+## Time Sorting
+sub tsort {
+	return	map { $_->[0] } # Undecorate
+		sort { $a->[1] <=> $b->[1] } # Sort
+		map { [$_, $cache{$_}->{t}] } # Decorate
+		keys %cache;
+}
+
 ## BHL check
 sub chklist {
 	my $link = shift;
@@ -93,6 +100,7 @@ sub chklist {
 	}
 	return $r;
 }
+
 sub uri_parse {
 	my ($url) = @_;
 	my @urljar = ($url =~ m{(https?://(?:[^\s"';]+))}g);
@@ -102,6 +110,7 @@ sub uri_parse {
 	@urljar = map { s/\/$//;$_; } @urljar;
 	return (@urljar > 0) ? @urljar : ();
 }
+
 sub getNick {
 	# WeeChat includes msgs sent by itself in this cb
 	return $opt{single_nick} if $opt{single_nick};
@@ -143,7 +152,7 @@ sub uri_get {
 # Callback Subroutines
 sub uri_process_cb {
 	my ($data, $cmd, $rc, $stdout, $stderr) = @_;
-	&debug(join('||',@_));
+	&debug(join('||',@_), 2);
 	my ($title, $out, $format);
 	my ($uri, $buffer) = split ' ', $data;
 	return weechat::WEECHAT_RC_OK
@@ -189,6 +198,7 @@ sub uri_process_cb {
 
 	return weechat::WEECHAT_RC_OK;
 }
+
 sub uri_cb {
 	my ($data, $buffer, $date, $tags, $disp, $hl, $prefix, $msg) = @_;
 	my ($out, $format);
@@ -200,8 +210,9 @@ sub uri_cb {
 		$format = "[uri]\t%s";
 	}
 	my @url = &uri_parse($msg);
+	&debug("Given urls: @url");
 
-	&debug(join('::', @_));
+	&debug(join('::', @_), 2);
 	# there is no need to go beyond this point otherwise
 	return weechat::WEECHAT_RC_OK unless (@url > 0);
 	
@@ -228,11 +239,10 @@ sub uri_cb {
 	}
 	
 	# Cache Pruning
+	## TODO: Must be moved. Cache will prune new entries if multiple urls
+	## given on line
 	if(scalar keys %cache > $opt{cache}) {
-		my @ordered =	map { $_->[0] } # Undecorate
-				sort { $b->[1] <=> $a->[1] } # Sort
-				map { [$_, $cache{$_}->{t}] } # Decorate
-				keys %cache;
+		my @ordered = &tsort;
 		&debug("Sorted Cache: @ordered");
 		if(@url > 1) {
 			my $t = scalar keys %cache;
@@ -261,6 +271,7 @@ sub blup {
 	weechat::print('', "$self loaded ".@blacklist.' items to BHL');
 	return weechat::WEECHAT_RC_OK;
 }
+
 sub toggle_opt {
 	my ($pointer, $option, $value) = @_;
 	my $o = (split /\./, $option)[-1];
@@ -271,16 +282,20 @@ sub toggle_opt {
 	}
 	return weechat::WEECHAT_RC_OK;
 }
+
 sub dumpcache {
+	my @sorted = &tsort;
 	weechat::print('',
-		sprintf("[uri]\t%s (%s) %s\n",
+		sprintf("[uri]\t%s (%s) %s [%s]\n",
 		$cache{$_}->{u},
 		$_,
-		$cache{$_}->{b})
-	) for (keys %cache);
+		$cache{$_}->{b},
+		$cache{$_}->{t})
+	) for (@sorted);
 	%cache = ();
 	return weechat::WEECHAT_RC_OK;
 }
+
 sub buff_close {
 	$opt{mode} = 0;
 	return weechat::WEECHAT_RC_OK;
