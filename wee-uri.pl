@@ -86,7 +86,7 @@ sub chklist {
 	my $link = shift;
 	my $r = 1;
 	for my $exp (@blacklist) {
-		if ($link =~ /$exp/) {
+		if ($link =~ $exp) {
 			$r = 0;
 			last;
 		}
@@ -257,8 +257,8 @@ sub blup {
 	my @bl = <FH>;
 	close FH;
 	chomp @bl;
-	@blacklist = @bl;
-	weechat::print('', "$self loaded ".@bl.' items to BHL');
+	push @blacklist, qr/$_/ for (@bl);
+	weechat::print('', "$self loaded ".@blacklist.' items to BHL');
 	return weechat::WEECHAT_RC_OK;
 }
 sub toggle_opt {
