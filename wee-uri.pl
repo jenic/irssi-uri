@@ -267,6 +267,8 @@ sub blup {
 	my @bl = <FH>;
 	close FH;
 	chomp @bl;
+	&debug("bl = @bl");
+	@blacklist = () if (@bl > 0);
 	push @blacklist, qr/$_/ for (@bl);
 	weechat::print('', "$self loaded ".@blacklist.' items to BHL');
 	return weechat::WEECHAT_RC_OK;
