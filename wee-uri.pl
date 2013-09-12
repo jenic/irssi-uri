@@ -62,7 +62,7 @@ my %opt =	( 'debug'		=> 0
 
 weechat::register	( $self
 			, 'Jenic Rycr <jenic\@wubwub.me>'
-			, '1.3'
+			, '1.3.1'
 			, 'GPL3'
 			, 'URI Title Fetching'
 			, ''
@@ -107,7 +107,7 @@ sub uri_parse {
 	# Filter out blacklisted links
 	@urljar = grep { &chklist($_) } @urljar;
 	# Remove extraneous slashes
-	@urljar = map { s/\/$//;$_; } @urljar;
+	@urljar = map { s/(\/|\#.*)$//;$_; } @urljar;
 	return (@urljar > 0) ? @urljar : ();
 }
 
@@ -143,7 +143,11 @@ sub uri_get {
 	# This is gross and needs to be done in a better way.
 	# *1 to allow perlisms such as 1e6
 	# /2000 to convert timeout from millisecond to seconds and cut in half
-	my $c = 'curl --max-filesize ' . ($opt{maxdl}*1) . ' -m ' . int($opt{timeout}/2000) . " -Ls $uri";
+	my $c = 'curl --max-filesize ' .
+		($opt{maxdl}*1) .
+		' -m ' .
+		int($opt{timeout}/2000) .
+		" -Ls $uri";
 	&debug("Hooking process for $uri");
 	weechat::hook_process($c, $opt{timeout}, 'uri_process_cb', "@_");
 	return 1;
