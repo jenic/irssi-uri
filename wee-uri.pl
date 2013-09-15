@@ -88,7 +88,7 @@ sub tsort {
 		keys %cache;
 }
 
-## BHL check
+## BL check
 sub chklist {
 	my $link = shift;
 	my $r = 1;
@@ -101,14 +101,15 @@ sub chklist {
 	return $r;
 }
 
+# Grab urls off line and return in urljar array reference
 sub uri_parse {
 	my ($url) = @_;
-	my @urljar = ($url =~ m{(https?://(?:[^\s"';]+))}g);
+	my @urljar = ($url =~ m{(https?://(?:[^\s"';,]+))}g);
 	# Filter out blacklisted links
 	@urljar = grep { &chklist($_) } @urljar;
 	# Remove extraneous slashes
 	@urljar = map { s/(\/|\#.*)$//;$_; } @urljar;
-	return (@urljar > 0) ? @urljar : ();
+	return (@urljar > 0) ? \@urljar : ();
 }
 
 sub getNick {
@@ -119,9 +120,9 @@ sub getNick {
 	my $infolist = weechat::infolist_get('buffer', $buffer, '');
 	weechat::infolist_next($infolist);
 	&debug(weechat::infolist_string($infolist, 'name'));
-	my $server = substr	(	( split /#/
-					, weechat::infolist_string($infolist, 'name')
-					)[0]
+	my $server = substr	( ( split /#/
+				  , weechat::infolist_string($infolist, 'name')
+				  )[0]
 				, 0
 				, -1
 				);
@@ -213,7 +214,7 @@ sub uri_cb {
 		$out = $buffer;
 		$format = "[uri]\t%s";
 	}
-	my @url = &uri_parse($msg);
+	my @url = @{uri_parse($msg)};
 	&debug("Given urls: @url");
 
 	&debug(join('::', @_), 2);
@@ -221,17 +222,22 @@ sub uri_cb {
 	return weechat::WEECHAT_RC_OK unless (@url > 0);
 	
 	unless($opt{xown}) {
-		my $nick = &getNick($buffer);
+		my $nick = getNick($buffer);
 		&debug("My nick is $nick");
 		return weechat::WEECHAT_RC_OK if($prefix =~ /.$nick$/);
 	}
     
 	for my $uri (@url) {
 		# Check our cache for a recent entry
-		if(exists $cache{$uri} && ($cache{$uri}->{t} > ($date - $opt{cachet}))) {
-			weechat::print($out, sprintf($format, $cache{$uri}->{u}, $uri));
-			weechat::print($buffer, sprintf("[uri]\t%s", $cache{$uri}->{u}))
-				if ($opt{mode} == 2);
+		if( exists $cache{$uri}
+			&& ($cache{$uri}->{t} > ($date - $opt{cachet}))
+		) {
+			weechat::print($out,
+				sprintf($format, $cache{$uri}->{u}, $uri));
+			weechat::print($buffer,
+				sprintf("[uri]\t%s", $cache{$uri}->{u})
+			) if ($opt{mode} == 2);
+
 			&debug("Used Cache from " . $cache{$uri}->{t});
 			$cache{$uri}->{t} = $date;
 			next;
@@ -274,7 +280,7 @@ sub blup {
 	&debug("bl = @bl");
 	@blacklist = () if (@bl > 0);
 	push @blacklist, qr{$_}i for (@bl);
-	weechat::print('', "$self loaded ".@blacklist.' items to BHL');
+	weechat::print('', "$self loaded ".@blacklist.' items to BL');
 	return weechat::WEECHAT_RC_OK;
 }
 
