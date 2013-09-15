@@ -109,7 +109,7 @@ sub uri_parse {
 	@urljar = grep { &chklist($_) } @urljar;
 	# Remove extraneous slashes
 	@urljar = map { s/(\/|\#.*)$//;$_; } @urljar;
-	return (@urljar > 0) ? \@urljar : ();
+	return (@urljar > 0) ? \@urljar : [];
 }
 
 sub getNick {
@@ -249,8 +249,6 @@ sub uri_cb {
 	}
 	
 	# Cache Pruning
-	## TODO: Must be moved. Cache will prune new entries if multiple urls
-	## given on line
 	if(scalar keys %cache > $opt{cache}) {
 		my @ordered = &tsort;
 		&debug("Sorted Cache: @ordered");
