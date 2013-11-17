@@ -48,26 +48,26 @@ my @blacklist;
 #window:name of buffer to print in for mode 1&2 (string)
 #maxdl:Maximum limit on download (in bytes)
 #timeout:Child process execution time limit (in milliseconds)
-my %opt =	( 'debug'		=> 0
-		, 'xown'		=> 0
-		, 'single_nick'		=> 0
-		, 'cache'		=> 5
-		, 'cachet'		=> 3600
-		, 'blfile'		=> $ENV{HOME} . "/.weechat/.uribl"
-		, 'mode'		=> 0
-		, 'window'		=> $self
-		, 'maxdl'		=> 1e6
-		, 'timeout'		=> 9001
-		);
+my %opt =   ( 'debug'       => 0
+			, 'xown'		=> 0
+            , 'single_nick'	=> 0
+            , 'cache'		=> 5
+            , 'cachet'		=> 3600
+            , 'blfile'		=> $ENV{HOME} . "/.weechat/.uribl"
+            , 'mode'		=> 0
+            , 'window'		=> $self
+            , 'maxdl'		=> 1e6
+            , 'timeout'		=> 9001
+            );
 
 weechat::register	( $self
-			, 'Jenic Rycr <jenic\@wubwub.me>'
-			, '1.3.1'
-			, 'GPL3'
-			, 'URI Title Fetching'
-			, ''
-			, ''
-			);
+                    , 'Jenic Rycr <jenic\@wubwub.me>'
+                    , '1.3.1'
+                    , 'GPL3'
+                    , 'URI Title Fetching'
+                    , ''
+                    , ''
+                    );
 
 my $version = sprintf("%s", weechat::info_get('version',''));
 
@@ -83,9 +83,9 @@ sub debug {
 ## Time Sorting
 sub tsort {
 	return	map { $_->[0] } # Undecorate
-		sort { $a->[1] <=> $b->[1] } # Sort
-		map { [$_, $cache{$_}->{t}] } # Decorate
-		keys %cache;
+            sort { $a->[1] <=> $b->[1] } # Sort
+            map { [$_, $cache{$_}->{t}] } # Decorate
+            keys %cache;
 }
 
 ## BL check
@@ -121,11 +121,11 @@ sub getNick {
 	weechat::infolist_next($infolist);
 	&debug(weechat::infolist_string($infolist, 'name'));
 	my $server = substr	( ( split /#/
-				  , weechat::infolist_string($infolist, 'name')
-				  )[0]
-				, 0
-				, -1
-				);
+                          , weechat::infolist_string($infolist, 'name')
+                          )[0]
+                        , 0
+                        , -1
+                        );
 	weechat::infolist_free($infolist);
 	&debug("server: $server");
 	my $nick = weechat::info_get('irc_nick', $server);
@@ -143,8 +143,8 @@ sub uri_get {
 
 	# This is gross and needs to be done in a better way.
 	# *1 to allow perlisms such as 1e6
-	# /2000 to convert timeout from millisecond to seconds and cut in half
-	my $c = 'curl --max-filesize ' .
+    # /2000 to convert timeout from millisecond to seconds and cut in half
+    my $c = 'curl --max-filesize ' .
 		($opt{maxdl}*1) .
 		' -m ' .
 		int($opt{timeout}/2000) .
@@ -295,13 +295,14 @@ sub toggle_opt {
 
 sub dumpcache {
 	my @sorted = &tsort;
-	weechat::print('',
-		sprintf("[uri]\t%s (%s) %s [%s]\n",
-		$cache{$_}->{u},
-		$_,
-		$cache{$_}->{b},
-		$cache{$_}->{t})
-	) for (@sorted);
+	weechat::print  (''
+                    , sprintf   ( "[uri]\t%s (%s) %s [%s]\n"
+                                , $cache{$_}->{u}
+                                , $_
+                                , $cache{$_}->{b}
+                                , $cache{$_}->{t}
+                                )
+                    ) for (@sorted);
 	%cache = ();
 	return weechat::WEECHAT_RC_OK;
 }
@@ -333,18 +334,18 @@ if ($opt{mode} > 0 && !$uribuf) {
 weechat::hook_print('', 'notify_message', '://', 1, 'uri_cb', '');
 weechat::hook_config("plugins.var.perl.$self.*", 'toggle_opt', '');
 weechat::hook_command	( "${self}_dump"
-			, 'Dumps contents of cache'
-			, ''
-			, ''
-			, ''
-			, 'dumpcache'
-			, ''
-			);
+                        , 'Dumps contents of cache'
+                        , ''
+                        , ''
+                        , ''
+                        , 'dumpcache'
+                        , ''
+                        );
 weechat::hook_command	( "${self}_update"
-			, 'Updates Blacklist'
-			, ''
-			, ''
-			, ''
-			, 'blup'
-			, ''
-			);
+                        , 'Updates Blacklist'
+                        , ''
+                        , ''
+                        , ''
+                        , 'blup'
+                        , ''
+                        );
