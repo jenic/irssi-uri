@@ -64,8 +64,7 @@ my %opt =   ( debug         =>  [ 0, 'Show debug messages [int > 0 | off]' ]
             , timeout       =>  [ 9001
                                 , 'Child execution time, milliseconds [int]'
                                 ]
-# TODO
-#            , ignore        =>  [ undef, 'List of buffers to ignore [str]' ]
+            , ignore        =>  [ '', 'List of buffers to ignore [str]' ]
             );
 
 weechat::register   ( $self
@@ -167,10 +166,10 @@ sub uri_process_cb {
     my ($data, $cmd, $rc, $stdout, $stderr) = @_;
     &debug(join('||',@_), 2);
     my ($title, $out, $format);
-    my ($uri, $buffer) = split ' ', $data;
+    my ($uri, $buffer, $bufname) = split ' ', $data;
     return weechat::WEECHAT_RC_OK
         if (exists $cache{$uri} && $cache{$uri}->{t});
-    my $bufname = weechat::buffer_get_string($buffer, 'short_name');
+
     if($opt{mode}) {
         $out = $uribuf;
         $format = "$bufname\t%s <%s>";
@@ -215,6 +214,13 @@ sub uri_process_cb {
 sub uri_cb {
     my ($data, $buffer, $date, $tags, $disp, $hl, $prefix, $msg) = @_;
     my ($out, $format);
+
+    # Before we determine anything, should we ignore this buffer?
+    my $bufname = weechat::buffer_get_string($buffer, 'short_name');
+    # Ignore urls from ignored buffers
+    return weechat::WEECHAT_RC_OK
+        if ($opt{ignore} && exists $opt{ignore}->{$bufname});
+
     if($opt{mode}) {
         $out = $uribuf;
         $format = "[uri]\t%s <%s>";
@@ -252,8 +258,8 @@ sub uri_cb {
         }
 
         # No cache entry, get the uri
-        &debug("Call to uri_get($uri, $buffer)");
-        uri_get($uri, $buffer);
+        &debug("Call to uri_get($uri, $buffer, $bufname)");
+        uri_get($uri, $buffer, $bufname);
     }
     
     # Cache Pruning
@@ -292,12 +298,29 @@ sub blup {
 
 sub opt_cb {
     my ($pointer, $option, $value) = @_;
+    &debug("opt_cb has: @_");
     my $o = (split /\./, $option)[-1];
-    if(exists $opt{$o}) {
-        $opt{$o} = $value;
-    } else {
+
+    unless (exists $opt{$o}) {
         weechat::print('', "$option doesn't exist!");
+        return weechat::WEECHAT_RC_ERROR;
     }
+
+    # ignore is a special case
+    if ($o eq 'ignore') {
+        unless ($value) {
+            &debug("Clearing ignore hash", 2);
+            $opt{ignore} = undef;
+            return weechat::WEECHAT_RC_OK;
+        }
+        &debug("opt_cb setting $value to ignore", 2);
+        $opt{ignore} = { map { $_ => undef } split(',', $value) };
+        return weechat::WEECHAT_RC_OK;
+    }
+
+    # Normal case
+    $opt{$o} = $value;
+
     return weechat::WEECHAT_RC_OK;
 }
 
@@ -337,12 +360,19 @@ while ( my($k, $v) = each %opt ) {
     } else {
         weechat::config_set_plugin($k, $v->[0]);
         if ($version >= 0x00030500) {
-            weechat::config_set_desc_plugin($k, $v->[1] .
+            weechat::config_set_desc_plugin($k, $v->[1] || '' .
                 " (default: $v->[0])");
         }
         # Don't store descriptions during runtime
         $opt{$k} = $v->[1];
     }
+}
+
+# Optimize ignore lookups using hash table
+
+if ($opt{ignore}) {
+    $opt{ignore} = { map { $_ => undef } split(',', $opt{ignore}) };
+    &debug("Ignoring buffer $_") for keys (%{$opt{ignore}});
 }
 
 &blup; # Load Blacklist
