@@ -101,6 +101,7 @@ sub chklist {
     my $r = 1;
     for my $exp (@blacklist) {
         if ($link =~ $exp) {
+            &debug("[BL] $link = $exp", 2);
             $r = 0;
             last;
         }
