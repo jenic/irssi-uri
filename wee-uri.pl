@@ -190,7 +190,7 @@ sub uri_process_cb {
     }
 
     # multiple small calls to engine more efficient than expressed in regex
-    $title =~ s/[\r\n]//g;
+    $title =~ s/[\r\n]+//g;
     $title =~ s/\s+/ /g;
     $title =~ s/(^\s+|\s+$)//;
     $title = decode_entities($title);
