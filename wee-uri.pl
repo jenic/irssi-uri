@@ -65,6 +65,7 @@ my %opt =   ( debug         =>  [ 0, 'Show debug messages [int > 0 | off]' ]
                                 , 'Child execution time, milliseconds [int]'
                                 ]
             , ignore        =>  [ '', 'List of buffers to ignore [str]' ]
+            , ua            =>  [ 'Mozilla/4.0', 'Curl\'s declared UA' ]
             );
 
 weechat::register   ( $self
@@ -156,7 +157,7 @@ sub uri_get {
         ($opt{maxdl}*1) .
         ' -m ' .
         int($opt{timeout}/2000) .
-        " -Ls $uri";
+        " -A '$opt{ua}' -Ls '$uri'";
     &debug("Hooking process for $uri");
     weechat::hook_process($c, $opt{timeout}, 'uri_process_cb', "@_");
     return 1;
