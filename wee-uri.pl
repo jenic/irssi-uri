@@ -113,7 +113,7 @@ sub chklist {
 # Grab urls off line and return in urljar array reference
 sub uri_parse {
     my ($url) = @_;
-    my @urljar = ($url =~ m{(https?://(?:[^\s"';,]+))}g);
+    my @urljar = ($url =~ m{(https?://[A-z0-9+&@#/%=~_.-]+)}g);
     # Filter out blacklisted links
     @urljar = grep { &chklist($_) } @urljar;
     # Remove extraneous slashes
