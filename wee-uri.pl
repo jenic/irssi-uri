@@ -56,15 +56,21 @@ my %opt =   ( debug         =>  [ 0, 'Show debug messages [int > 0 | off]' ]
             , blfile        =>  [ $ENV{HOME} . "/.weechat/.uribl"
                                 , 'Full path to blacklist file (string)'
                                 ]
-            , mode          =>  [ 0, 'Mode of operation [see script comments]' ]
+            , mode          =>  [ 0
+                                , 'Mode of operation [see script comments]'
+                                ]
             , window        =>  [ $self
                                 , 'Name of buffer used for modes > 0 [int]'
                                 ]
-            , maxdl         =>  [ 1e6, 'Max limit on download, in bytes [int]' ]
+            , maxdl         =>  [ 1e6
+                                , 'Max limit on download, in bytes [int]'
+                                ]
             , timeout       =>  [ 9001
                                 , 'Child execution time, milliseconds [int]'
                                 ]
-            , ignore        =>  [ '', 'List of buffers to ignore [str]' ]
+            , ignore        =>  [ ''
+                                , 'Buffers to ignore. , delimited [str]'
+                                ]
             , ua            =>  [ 'Mozilla/4.0', 'Curl\'s declared UA' ]
             );
 
