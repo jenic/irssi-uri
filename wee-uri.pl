@@ -76,7 +76,7 @@ my %opt =   ( debug         =>  [ 0, 'Show debug messages [int > 0 | off]' ]
 
 weechat::register   ( $self
                     , 'Jenic Rycr <jenic\@wubwub.me>'
-                    , '1.4'
+                    , '1.5'
                     , 'GPL3'
                     , 'URI Title Fetching'
                     , ''
@@ -108,7 +108,7 @@ sub chklist {
     my $r = 1;
     for my $exp (@blacklist) {
         if ($link =~ $exp) {
-            &debug("[BL] $link = $exp", 2);
+            debug("[BL] $link = $exp", 2);
             $r = 0;
             last;
         }
@@ -121,7 +121,7 @@ sub uri_parse {
     my ($url) = @_;
     my @urljar = ($url =~ m{(https?://[A-z0-9+&@#/%=~?_.-]+)}g);
     # Filter out blacklisted links
-    @urljar = grep { &chklist($_) } @urljar;
+    @urljar = grep { chklist($_) } @urljar;
     # Remove extraneous slashes
     @urljar = map { s/(\/|\#.*)$//;$_; } @urljar;
     return (@urljar > 0) ? \@urljar : [];
@@ -134,7 +134,7 @@ sub getNick {
     my $buffer = shift;
     my $infolist = weechat::infolist_get('buffer', $buffer, '');
     weechat::infolist_next($infolist);
-    &debug(weechat::infolist_string($infolist, 'name'));
+    debug(weechat::infolist_string($infolist, 'name'));
     my $server = substr ( ( split /#/
                           , weechat::infolist_string($infolist, 'name')
                           )[0]
@@ -142,7 +142,7 @@ sub getNick {
                         , -1
                         );
     weechat::infolist_free($infolist);
-    &debug("server: $server");
+    debug("server: $server");
     my $nick = weechat::info_get('irc_nick', $server);
     return $nick;
 }
@@ -164,7 +164,7 @@ sub uri_get {
         ' -m ' .
         int($opt{timeout}/2000) .
         " -A '$opt{ua}' -Ls '$uri'";
-    &debug("Hooking process for $uri");
+    debug("Hooking process for $uri");
     weechat::hook_process($c, $opt{timeout}, 'uri_process_cb', "@_");
     return 1;
 }
@@ -172,7 +172,7 @@ sub uri_get {
 # Callback Subroutines
 sub uri_process_cb {
     my ($data, $cmd, $rc, $stdout, $stderr) = @_;
-    &debug(join('||',@_), 2);
+    debug(join('||',@_), 2);
     my ($title, $out, $format);
     my ($uri, $buffer, $bufname) = split ' ', $data;
     return weechat::WEECHAT_RC_OK
@@ -187,12 +187,12 @@ sub uri_process_cb {
     }
     if($stdout =~ /<title>(.*?)<\/title>/is) {
         if(!$1) {
-            &debug("Pattern matched but title empty");
+            debug("Pattern matched but title empty");
             return weechat::WEECHAT_RC_OK;
         }
         $title = $1;
     } else {
-        &debug("Gave up on matching <title>");
+        debug("Gave up on matching <title>");
         return weechat::WEECHAT_RC_OK;
     }
 
@@ -209,7 +209,7 @@ sub uri_process_cb {
     # This pruning is a fall back incase proper prune fails for w/e reason.
     # Don't want memory filling up with url's!
     if (scalar keys %cache > ($opt{cache}*2)) {
-        &debug("Cache Prune Fallback! Something weird happened!");
+        debug("Cache Prune Fallback! Something weird happened!");
         %cache = ();
     }
     $cache{$uri}->{u} = $title;
@@ -237,15 +237,15 @@ sub uri_cb {
         $format = "[uri]\t%s";
     }
     my @url = @{uri_parse($msg)};
-    &debug("Given urls: @url");
+    debug("Given urls: @url");
 
-    &debug(join('::', @_), 2);
+    debug(join('::', @_), 2);
     # there is no need to go beyond this point otherwise
     return weechat::WEECHAT_RC_OK unless (@url > 0);
     
     unless($opt{xown}) {
         my $nick = getNick($buffer);
-        &debug("My nick is $nick");
+        debug("My nick is $nick");
         return weechat::WEECHAT_RC_OK if($prefix =~ /.$nick$/);
     }
     
@@ -260,28 +260,28 @@ sub uri_cb {
                 sprintf("[uri]\t%s", $cache{$uri}->{u})
             ) if ($opt{mode} == 2);
 
-            &debug("Used Cache from " . $cache{$uri}->{t});
+            debug("Used Cache from " . $cache{$uri}->{t});
             $cache{$uri}->{t} = $date;
             next;
         }
 
         # No cache entry, get the uri
-        &debug("Call to uri_get($uri, $buffer, $bufname)");
+        debug("Call to uri_get($uri, $buffer, $bufname)");
         uri_get($uri, $buffer, $bufname);
     }
     
     # Cache Pruning
     if(scalar keys %cache > $opt{cache}) {
-        my @ordered = &tsort;
-        &debug("Sorted Cache: @ordered");
+        my @ordered = tsort();
+        debug("Sorted Cache: @ordered");
         if(@url > 1) {
             my $t = scalar keys %cache;
             my $n = ($t - $opt{cache});
             my @trunc = splice(@ordered, 0, $n);
-            &debug("Cache is pruning @trunc (t=$t n=$n)");
+            debug("Cache is pruning @trunc (t=$t n=$n)");
             delete @cache{@trunc};
         } else {
-            &debug("Cache is pruning $ordered[0]");
+            debug("Cache is pruning $ordered[0]");
             delete $cache{$ordered[0]};
         }
     }
@@ -297,7 +297,7 @@ sub blup {
     my @bl = <FH>;
     close FH;
     chomp @bl;
-    &debug("bl = @bl");
+    debug("bl = @bl");
     @blacklist = () if (@bl > 0);
     push @blacklist, qr{$_}i for (@bl);
     weechat::print('', "$self loaded ".@blacklist.' items to BL');
@@ -306,7 +306,7 @@ sub blup {
 
 sub opt_cb {
     my ($pointer, $option, $value) = @_;
-    &debug("opt_cb has: @_");
+    debug("opt_cb has: @_");
     my $o = (split /\./, $option)[-1];
 
     unless (exists $opt{$o}) {
@@ -317,11 +317,11 @@ sub opt_cb {
     # ignore is a special case
     if ($o eq 'ignore') {
         unless ($value) {
-            &debug("Clearing ignore hash", 2);
+            debug("Clearing ignore hash", 2);
             $opt{ignore} = undef;
             return weechat::WEECHAT_RC_OK;
         }
-        &debug("opt_cb setting $value to ignore", 2);
+        debug("opt_cb setting $value to ignore", 2);
         $opt{ignore} = { map { $_ => undef } split(',', $value) };
         return weechat::WEECHAT_RC_OK;
     }
@@ -333,7 +333,7 @@ sub opt_cb {
 }
 
 sub dumpcache {
-    my @sorted = &tsort;
+    my @sorted = tsort();
     weechat::print  (''
                     , sprintf   ( "[uri]\t%s (%s) %s [%s]\n"
                                 , $cache{$_}->{u}
@@ -348,6 +348,7 @@ sub dumpcache {
 
 sub buff_close {
     $opt{mode} = 0;
+    $uribuf = undef;
     return weechat::WEECHAT_RC_OK;
 }
 
@@ -377,13 +378,12 @@ while ( my($k, $v) = each %opt ) {
 }
 
 # Optimize ignore lookups using hash table
-
 if ($opt{ignore}) {
     $opt{ignore} = { map { $_ => undef } split(',', $opt{ignore}) };
-    &debug("Ignoring buffer $_") for keys (%{$opt{ignore}});
+    debug("Ignoring buffer $_") for keys (%{$opt{ignore}});
 }
 
-&blup; # Load Blacklist
+blup(); # Load Blacklist
 
 # Do we need to create a buffer?
 $uribuf = weechat::info_get($opt{window}, '') || 0;
@@ -393,7 +393,7 @@ if ($opt{mode} > 0 && !$uribuf) {
     weechat::buffer_set($uribuf, "title", $opt{window});
 }
 
-weechat::hook_print('', 'notify_message', '://', 1, 'uri_cb', '');
+weechat::hook_print('', 'irc_privmsg', '://', 1, 'uri_cb', '');
 weechat::hook_config("plugins.var.perl.$self.*", 'opt_cb', '');
 weechat::hook_command   ( "${self}_dump"
                         , 'Dumps contents of cache'
