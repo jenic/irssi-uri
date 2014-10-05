@@ -187,6 +187,7 @@ sub uri_process_cb {
     }
     if($stdout =~ /<title>(.*?)<\/title>/is) {
         if(!$1) {
+            # TODO: Do something better here. Tell the user!
             debug("Pattern matched but title empty");
             return weechat::WEECHAT_RC_OK;
         }
@@ -245,8 +246,8 @@ sub uri_cb {
     
     unless($opt{xown}) {
         my $nick = getNick($buffer);
-        debug("My nick is $nick");
-        return weechat::WEECHAT_RC_OK if($prefix =~ /.$nick$/);
+        debug("My nick is $nick, prefix is '$prefix'");
+        return weechat::WEECHAT_RC_OK if($prefix =~ /^\W*$nick$/);
     }
     
     for my $uri (@url) {
