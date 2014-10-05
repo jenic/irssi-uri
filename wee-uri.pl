@@ -282,7 +282,7 @@ sub uri_cb {
             debug("Cache is pruning @trunc (t=$t n=$n)");
             delete @cache{@trunc};
         } else {
-            debug("Cache is pruning $ordered[0]");
+            debug("Cache is pruning " . $cache{$ordered[0]}->{u});
             delete $cache{$ordered[0]};
         }
     }
