@@ -198,10 +198,10 @@ sub uri_process_cb {
     }
 
     # multiple small calls to engine more efficient than expressed in regex
+    $title = decode_entities($title);
     $title =~ s/[\r\n]+//g;
     $title =~ s/\s+/ /g;
     $title =~ s/(^\s+|\s+$)//;
-    $title = decode_entities($title);
 
     weechat::print($out, sprintf($format, $title, $uri));
     weechat::print($buffer, "[uri]\t$title")
