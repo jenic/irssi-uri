@@ -72,6 +72,7 @@ my %opt =   ( debug         =>  [ 0, 'Show debug messages [int > 0 | off]' ]
                                 , 'Buffers to ignore. , delimited [str]'
                                 ]
             , ua            =>  [ 'Mozilla/4.0', 'Curl\'s declared UA' ]
+            , clim          =>  [ 120, 'Title\'s character limit' ]
             );
 
 weechat::register   ( $self
@@ -173,6 +174,8 @@ sub uri_get {
 sub uri_process_cb {
     my ($data, $cmd, $rc, $stdout, $stderr) = @_;
     debug(join('||',@_), 2);
+    debug("STDERR: " . $stderr);
+    debug("Return Code: " . $rc);
     my ($title, $out, $format);
     my ($uri, $buffer, $bufname) = split ' ', $data;
     return weechat::WEECHAT_RC_OK
@@ -196,6 +199,10 @@ sub uri_process_cb {
         debug("Gave up on matching <title>");
         return weechat::WEECHAT_RC_OK;
     }
+
+    # Truncate excessive titles
+    substr($title, $opt{clim}) = ""
+        if (length($title) > $opt{clim});
 
     # multiple small calls to engine more efficient than expressed in regex
     $title = decode_entities($title);
