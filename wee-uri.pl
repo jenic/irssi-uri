@@ -250,13 +250,13 @@ sub uri_cb {
     debug(join('::', @_), 2);
     # there is no need to go beyond this point otherwise
     return weechat::WEECHAT_RC_OK unless (@url > 0);
-    
+
     unless($opt{xown}) {
         my $nick = getNick($buffer);
         debug("My nick is $nick, prefix is '$prefix'");
         return weechat::WEECHAT_RC_OK if($prefix =~ /^\W*$nick$/);
     }
-    
+
     for my $uri (@url) {
         # Check our cache for a recent entry
         if( exists $cache{$uri}
@@ -277,7 +277,7 @@ sub uri_cb {
         debug("Call to uri_get($uri, $buffer, $bufname)");
         uri_get($uri, $buffer, $bufname);
     }
-    
+
     # Cache Pruning
     if(scalar keys %cache > $opt{cache}) {
         my @ordered = tsort();
@@ -406,7 +406,7 @@ weechat::hook_config("plugins.var.perl.$self.*", 'opt_cb', '');
 weechat::hook_command   ( "${self}_dump"
                         , 'Dumps contents of cache'
                         , ''
-                        , ''
+                        , "Examples:\n/${self}_dump\n"
                         , ''
                         , 'dumpcache'
                         , ''
@@ -414,7 +414,7 @@ weechat::hook_command   ( "${self}_dump"
 weechat::hook_command   ( "${self}_update"
                         , 'Updates Blacklist'
                         , ''
-                        , ''
+                        , "Examples:\n/${self}_update\n"
                         , ''
                         , 'blup'
                         , ''
