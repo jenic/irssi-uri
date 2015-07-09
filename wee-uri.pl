@@ -164,8 +164,12 @@ sub uri_get {
         ($opt{maxdl}*1) .
         ' -m ' .
         int($opt{timeout}/2000) .
-        " -A '$opt{ua}' -Ls '$uri'";
+        # Some WAF's identify browsers by header order. -A happens too soon
+        #" -A '$opt{ua}' -Ls '$uri'";
+        " -H 'Accept: */*'" .
+        " -H 'User-Agent: $opt{ua}' -Ls '$uri'";
     debug("Hooking process for $uri");
+    debug("Using $c", 2);
     weechat::hook_process($c, $opt{timeout}, 'uri_process_cb', "@_");
     return 1;
 }
